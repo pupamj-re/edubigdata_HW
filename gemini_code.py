@@ -31,7 +31,10 @@ def set_chinese_font():
     font_candidates = ["Noto Sans CJK TC", "Microsoft JhengHei", "微軟正黑體", "Taipei Sans TC", "sans-serif"]
     if font_file and os.path.exists(font_file):
         fm.fontManager.addfont(font_file)
-    plt.rcParams["font.family"] = font_candidates
+        font_prop = fm.FontProperties(fname=font_file)
+        plt.rcParams["font.family"] = [font_prop.get_name()]
+    else:
+        plt.rcParams["font.family"] = font_candidates
     plt.rcParams["font.sans-serif"] = font_candidates
     plt.rcParams["axes.unicode_minus"] = False
 
