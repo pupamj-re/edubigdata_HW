@@ -31,11 +31,12 @@ def set_chinese_font():
     font_candidates = ["Noto Sans CJK TC", "Microsoft JhengHei", "微軟正黑體", "Taipei Sans TC", "sans-serif"]
     if font_file and os.path.exists(font_file):
         fm.fontManager.addfont(font_file)
-        font_prop = fm.FontProperties(fname=font_file)
-        plt.rcParams["font.family"] = [font_prop.get_name()]
+        font_name = fm.FontProperties(fname=font_file).get_name()
+        plt.rcParams["font.family"] = "sans-serif"
+        plt.rcParams["font.sans-serif"] = [font_name] + font_candidates
     else:
-        plt.rcParams["font.family"] = font_candidates
-    plt.rcParams["font.sans-serif"] = font_candidates
+        plt.rcParams["font.family"] = "sans-serif"
+        plt.rcParams["font.sans-serif"] = font_candidates
     plt.rcParams["axes.unicode_minus"] = False
 
 
@@ -160,8 +161,8 @@ def load_data(data_file: str = DATA_FILE) -> pd.DataFrame:
 
 
 def main(data_file: str = DATA_FILE, output_dir: str = OUTPUT_DIR):
-    set_chinese_font()
     sns.set_theme(style="whitegrid")
+    set_chinese_font()
     os.makedirs(output_dir, exist_ok=True)
 
     df = load_data(data_file)
