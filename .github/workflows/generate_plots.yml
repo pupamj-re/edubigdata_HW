@@ -3,7 +3,7 @@ name: Generate plots and update notebook
 on:
   push:
     paths:
-      - 'gemini-code-1786348741522.py'
+      - 'gemini_code.py'
       - 'edubigdata_HW/**'
   workflow_dispatch: {}
   schedule:
@@ -29,7 +29,7 @@ jobs:
           pip install -r requirements.txt nbconvert jupyter
 
       - name: Run script to generate plots
-        run: python gemini-code-1786348741522.py
+        run: python gemini_code.py
 
       - name: Execute notebook and produce executed ipynb
         run: jupyter nbconvert --to notebook --execute gemini-code-1786348741522.ipynb --output gemini-code-1786348741522.ipynb --ExecutePreprocessor.timeout=600

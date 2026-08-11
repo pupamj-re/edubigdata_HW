@@ -35,7 +35,7 @@ pip install -r requirements.txt
 執行主程式產生圖檔：
 
 ```bash
-python gemini-code-1786348741522.py
+python gemini_code.py
 ```
 
 或用 notebook 互動執行（示範如何以檔案路徑匯入函式）：
