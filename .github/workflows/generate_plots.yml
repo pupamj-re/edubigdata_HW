@@ -1,0 +1,43 @@
+name: Generate plots and update notebook
+
+on:
+  push:
+    paths:
+      - 'gemini-code-1786348741522.py'
+      - 'edubigdata_HW/**'
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 2 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt nbconvert jupyter
+
+      - name: Run script to generate plots
+        run: python gemini-code-1786348741522.py
+
+      - name: Execute notebook and produce executed ipynb
+        run: jupyter nbconvert --to notebook --execute gemini-code-1786348741522.ipynb --output gemini-code-1786348741522.ipynb --ExecutePreprocessor.timeout=600
+
+      - name: Commit generated outputs
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: "Auto: regenerate plots and notebook"
+          add: 'output/*, gemini-code-1786348741522.ipynb'
+          author_name: github-actions
+          author_email: action@github.com
