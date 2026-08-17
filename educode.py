@@ -1,15 +1,16 @@
 import re
 import urllib.request
 from pathlib import Path
-from typing import Final
+from typing import Any, Final
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.font_manager as fm
+from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import plotly.express as px
+import plotly.express as px  # type: ignore[import-not-found,reportMissingImports]
 import seaborn as sns
 
 # ----------------------------------------------------
@@ -28,6 +29,7 @@ CLASS_LABELS: Final[list[str]] = ["6班(含)以下", "7-12班", "13-24班", "25-
 STUDENT_BINS: Final[list[float]] = [0.0, 50.0, 100.0, 300.0, 600.0, 1000.0, float("inf")]
 STUDENT_LABELS: Final[list[str]] = ["50人以下", "51-100人", "101-300人", "301-600人", "601-1000人", "1000人以上"]
 REMOTE_ORDER: Final[list[str]] = ["一般", "非山非市", "偏遠", "特偏", "極偏"]
+REMOTE_CODE_MAP: Final[dict[int, str]] = {0: "一般", 1: "非山非市", 2: "偏遠", 3: "特偏", 4: "極偏"}
 
 plt.rcParams["font.family"] = "sans-serif"
 plt.rcParams["font.sans-serif"] = ["Noto Sans CJK TC", "Microsoft JhengHei", "微軟正黑體", "Taipei Sans TC", "sans-serif"]
@@ -60,7 +62,7 @@ def set_chinese_font() -> None:
     font_file = ensure_font()
     font_candidates = ["Noto Sans CJK TC", "Microsoft JhengHei", "微軟正黑體", "Taipei Sans TC", "sans-serif"]
     if font_file and Path(font_file).exists():
-        fm.fontManager.addfont(font_file)
+        fm.fontManager.addfont(str(font_file))  # type: ignore[attr-defined]
         font_name = fm.FontProperties(fname=font_file).get_name()
         plt.rcParams["font.family"] = "sans-serif"
         plt.rcParams["font.sans-serif"] = [font_name] + font_candidates
@@ -119,7 +121,8 @@ def prepare_analysis_frame(df_stats: pd.DataFrame, df_list: pd.DataFrame) -> pd.
     merged["總學生數"] = merged["男學生總數"] + merged["女學生總數"]
     merged["總教師數"] = merged["男專任教師"] + merged["女專任教師"]
     merged["生師比"] = merged["總學生數"] / merged["總教師數"].replace(0, np.nan)
-    merged["偏遠程度"] = merged["偏遠程度"].fillna("一般")
+    merged["偏遠程度"] = merged["偏遠程度"].map(REMOTE_CODE_MAP).fillna("一般")
+    merged["偏遠程度"] = pd.Categorical(merged["偏遠程度"], categories=REMOTE_ORDER, ordered=True)
 
     return merged
 
@@ -202,7 +205,7 @@ def build_summary_components(merged: pd.DataFrame) -> tuple[list[str], pd.Series
 # ----------------------------------------------------
 # 4. 圖表輸出
 # ----------------------------------------------------
-def compute_statistical_summary(merged: pd.DataFrame) -> dict[str, object]:
+def compute_statistical_summary(merged: pd.DataFrame) -> dict[str, Any]:
     """計算正式報告所需的統計量。"""
     district_summary = (
         merged.groupby("鄉鎮市區")
@@ -227,7 +230,7 @@ def compute_statistical_summary(merged: pd.DataFrame) -> dict[str, object]:
     }
 
 
-def analyze_regional_and_regression(merged: pd.DataFrame) -> dict[str, object]:
+def analyze_regional_and_regression(merged: pd.DataFrame) -> dict[str, Any]:
     """進一步分析區域比較與偏遠程度對生師比的回歸關係。"""
     regional_summary = (
         merged.groupby("鄉鎮市區")
@@ -266,7 +269,7 @@ def analyze_regional_and_regression(merged: pd.DataFrame) -> dict[str, object]:
     }
 
 
-def analyze_multivariable_regression(merged: pd.DataFrame) -> dict[str, object]:
+def analyze_multivariable_regression(merged: pd.DataFrame) -> dict[str, Any]:
     """使用多變量線性回歸分析偏遠程度、行政區與學校規模對生師比的共同影響。"""
     model_df = merged[["生師比", "偏遠程度", "鄉鎮市區", "總學生數", "總班級數"]].copy()
     model_df = model_df.dropna(subset=["生師比", "偏遠程度", "鄉鎮市區", "總學生數", "總班級數"])
@@ -312,8 +315,8 @@ def build_formal_report(
     female_total: int,
     male_teacher_total: int,
     female_teacher_total: int,
-    analysis_result: dict[str, object],
-    multivariable_result: dict[str, object],
+    analysis_result: dict[str, Any],
+    multivariable_result: dict[str, Any],
 ) -> list[str]:
     """建立更像正式報告的文字摘要。"""
     stats = compute_statistical_summary(merged)
@@ -425,7 +428,7 @@ def create_interactive_charts(merged: pd.DataFrame, output_dir: Path) -> None:
     fig3.write_html(str(output_dir / "interactive_remote_summary.html"))
 
 
-def plot_regional_and_regression_analysis(merged: pd.DataFrame, analysis_result: dict[str, object], output_dir: Path) -> None:
+def plot_regional_and_regression_analysis(merged: pd.DataFrame, analysis_result: dict[str, Any], output_dir: Path) -> None:
     """輸出區域比較與回歸分析圖。"""
     regional_summary = analysis_result["regional_summary"]
     regression_df = analysis_result["regression_df"]
@@ -466,7 +469,7 @@ def plot_regional_and_regression_analysis(merged: pd.DataFrame, analysis_result:
     fig.write_html(str(output_dir / "interactive_region_bi_ratio.html"))
 
 
-def plot_multivariable_analysis(multivariable_result: dict[str, object], output_dir: Path) -> None:
+def plot_multivariable_analysis(multivariable_result: dict[str, Any], output_dir: Path) -> None:
     """輸出多變量分析相關圖表。"""
     coeff_df = multivariable_result["coeff_df"].head(10).copy()
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -487,7 +490,7 @@ def plot_multivariable_analysis(multivariable_result: dict[str, object], output_
     save_figure(fig, "多變量分析_實際_vs_預測.png", output_dir)
 
 
-def save_figure(fig: plt.Figure, filename: str, output_dir: Path) -> None:
+def save_figure(fig: Figure, filename: str, output_dir: Path) -> None:
     """將圖表存成 PNG 檔並關閉圖表物件。"""
     fig.tight_layout()
     fig.savefig(output_dir / filename, dpi=300, bbox_inches="tight")
